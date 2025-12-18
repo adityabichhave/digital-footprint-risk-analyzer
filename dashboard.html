@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Digital Footprint Risk Analyzer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background: linear-gradient(135deg,#e0f2fe,#ecfeff,#f0fdf4);
+  font-family:Inter,sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:#0f172a;
+}
+
+.container{
+  width:520px;
+  padding:30px;
+  border-radius:22px;
+  background:#ffffffdd;
+  box-shadow:0 40px 100px rgba(0,0,0,.15);
+}
+
+.team{
+  text-align:center;
+  font-family:Orbitron;
+  font-size:14px;
+  letter-spacing:4px;
+  color:#16a34a;
+  margin-bottom:8px;
+}
+
+h1{
+  text-align:center;
+  font-family:Orbitron;
+  font-size:28px;
+  margin-bottom:20px;
+  background:linear-gradient(90deg,#2563eb,#16a34a);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+input{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:1px solid #cbd5f5;
+  font-size:15px;
+}
+
+button{
+  width:100%;
+  margin-top:12px;
+  padding:14px;
+  border-radius:14px;
+  border:none;
+  font-weight:700;
+  font-size:15px;
+  cursor:pointer;
+  background:linear-gradient(135deg,#2563eb,#16a34a);
+  color:white;
+}
+
+.result{
+  margin-top:25px;
+  padding:20px;
+  border-radius:18px;
+  background:#f8fafc;
+}
+
+.row{
+  margin:6px 0;
+  font-size:14px;
+}
+
+/* COUNTER */
+.score{
+  font-family:Orbitron;
+  font-size:38px;
+  text-align:center;
+  margin:10px 0;
+}
+
+/* PIE */
+.pie-wrap{
+  display:flex;
+  justify-content:center;
+  margin:15px 0;
+}
+
+.pie{
+  width:130px;
+  height:130px;
+  border-radius:50%;
+  background:conic-gradient(
+    var(--color) calc(var(--percent) * 1%),
+    #e5e7eb 0
+  );
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.pie span{
+  font-family:Orbitron;
+  font-size:18px;
+  font-weight:800;
+}
+
+/* MAP */
+.map{
+  position:relative;
+  margin:20px auto;
+  width:100%;
+  height:160px;
+  background:#e0f2fe;
+  border-radius:14px;
+  overflow:hidden;
+}
+
+.map::before{
+  content:"WORLD MAP (SIMULATED)";
+  position:absolute;
+  top:6px;
+  left:10px;
+  font-size:10px;
+  opacity:.6;
+}
+
+.dot{
+  position:absolute;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:red;
+  animation:pulse 1.4s infinite;
+}
+
+.dot.green{background:#16a34a}
+.dot.red{background:#dc2626}
+
+@keyframes pulse{
+  0%{transform:scale(1);opacity:1}
+  100%{transform:scale(2);opacity:0}
+}
+
+.badge{
+  display:inline-block;
+  padding:6px 14px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+}
+
+.low{background:#16a34a;color:white}
+.medium{background:#f59e0b;color:white}
+.high{background:#dc2626;color:white}
+
+.footer{
+  text-align:center;
+  font-size:11px;
+  opacity:.7;
+  margin-top:15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="team">STACK OVERFLOW WARRIORS</div>
+  <h1>Digital Footprint Risk Analyzer</h1>
+
+  <input id="userId" placeholder="Enter User ID (e.g. user_geo_high)">
+  <button onclick="checkRisk()">Analyze Risk</button>
+
+  <div id="output"></div>
+
+  <div class="footer">MongoDB Atlas · Geo-Anomaly Detection</div>
+</div>
+
+<script>
+function animateCount(el, end){
+  let start=0;
+  const step=()=> {
+    start+=Math.ceil(end/30);
+    if(start>=end){el.innerText=end;return;}
+    el.innerText=start;
+    requestAnimationFrame(step);
+  };
+  step();
+}
+
+async function checkRisk(){
+  const id=document.getElementById("userId").value.trim();
+  if(!id)return;
+
+  const out=document.getElementById("output");
+  out.innerHTML="<div class='result'>Analyzing...</div>";
+
+  const res=await fetch(`http://localhost:3000/risk-score/${id}`);
+  const d=await res.json();
+
+  let level="LOW",cls="low",color="#16a34a";
+  if(d.riskScore>=70){level="HIGH";cls="high";color="#dc2626";}
+  else if(d.riskScore>=40){level="MEDIUM";cls="medium";color="#f59e0b";}
+
+  out.innerHTML=`
+  <div class="result">
+    <div class="row"><b>User:</b> ${d.userId}</div>
+
+    <div class="pie-wrap">
+      <div class="pie" style="--percent:${d.riskScore};--color:${color}">
+        <span id="scoreVal">0</span>
+      </div>
+    </div>
+
+    <div class="score"><span id="scoreText">0</span>/100</div>
+
+    <span class="badge ${cls}">${level} RISK</span>
+
+    <div class="map">
+      <div class="dot green" style="left:30%;top:60%"></div>
+      ${d.geoAnomaly ? `<div class="dot red" style="left:70%;top:30%"></div>` : ``}
+    </div>
+
+    <div class="row"><b>Total Logins:</b> ${d.totalLogins}</div>
+    <div class="row"><b>Geo-Anomaly:</b> ${d.geoAnomaly ? "⚠ Impossible Travel Detected" : "None"}</div>
+  </div>`;
+
+  animateCount(document.getElementById("scoreVal"), d.riskScore);
+  animateCount(document.getElementById("scoreText"), d.riskScore);
+}
+</script>
+
+</body>
+</html>
